@@ -8,6 +8,7 @@ random.seed(0)
 from gensim.models.doc2vec import LabeledSentence, Doc2Vec
 #nltk.download("stopwords")          # Download the stop words from nltk
 import itertools
+import collections
 
 
 # User input path to the train-pos.txt, train-neg.txt, test-pos.txt, and test-neg.txt datasets
@@ -74,18 +75,48 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     """
     # English stopwords from nltk
     stopwords = set(nltk.corpus.stopwords.words('english'))
-    print stopwords
-    train_pos_list = set(itertools.chain(*train_pos))
-    print train_pos_list
-    train_neg_list = set(itertools.chain(*train_neg))
-    print train_neg_list
-    print len(train_pos_list),len(train_neg_list)
+    #print stopwords
+
     # Determine a list of words that will be used as features. 
     # This list should have the following properties:
     #   (1) Contains no stop words
     #   (2) Is in at least 1% of the positive texts or 1% of the negative texts
     #   (3) Is in at least twice as many postive texts as negative texts, or vice-versa.
-    # YOUR CODE HERE
+    #get all the words without duplicates
+    train_words = set(list(itertools.chain(*train_neg))+list(itertools.chain(*train_pos)))
+    
+    #eliminated the duplicate inside each text
+    pos = []
+    neg = []
+    for text in train_pos:
+        temp = set(text)
+        pos.append(list(temp))
+    for text in train_neg:
+        temp = set(text)
+        neg.append(list(temp))
+
+    #map the word into count
+    temp_pos = list(itertools.chain(*pos))
+    temp_neg= list(itertools.chain(*neg))
+    pos_dic = collections.Counter(temp_pos)
+    neg_dic = collections.Counter(temp_neg)
+    #print pos_dic.most_common(10)
+
+    dic1 = {x:y for x,y in pos_dic.iteritems() if y>=int(len(train_pos)*0.01) and x not in stopwords}
+    dic2 = {x:y for x,y in neg_dic.iteritems() if y>=int(len(train_neg)*0.01) and x not in stopwords}
+
+    condition12 = dic1.viewkeys() | dic2.viewkeys()
+    intersection = pos_dic.viewkeys() & neg_dic.viewkeys()
+    #print len(intersection)
+
+    condition3 = []
+    for key in intersection:
+        if pos_dic[key]>=2*neg_dic[key] or neg_dic[key]>=2*pos_dic[key]:
+            condition3.append(key)
+    features = set(condition12) & set(condition3)
+
+    print features
+    print len(features)
 
     # Using the above words as features, construct binary vectors for each text in the training and test set.
     # These should be python lists containing 0 and 1 integers.
