@@ -9,6 +9,7 @@ from gensim.models.doc2vec import LabeledSentence, Doc2Vec
 #nltk.download("stopwords")          # Download the stop words from nltk
 import itertools
 import collections
+import datetime
 
 
 # User input path to the train-pos.txt, train-neg.txt, test-pos.txt, and test-neg.txt datasets
@@ -22,6 +23,7 @@ method = int(sys.argv[2])
 
 
 def main():
+    a = datetime.datetime.now().replace(microsecond=0)
     train_pos, train_neg, test_pos, test_neg = load_data(path_to_data)
     #print train_pos
     if method == 0:
@@ -37,6 +39,9 @@ def main():
     print "Logistic Regression"
     print "-------------------"
     evaluate_model(lr_model, test_pos_vec, test_neg_vec, True)
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'Total time:',(b-a)
+
 
 
 
@@ -44,6 +49,7 @@ def load_data(path_to_dir):
     """
     Loads the train and test set into four different lists.
     """
+    a = datetime.datetime.now().replace(microsecond=0)
     train_pos = []
     train_neg = []
     test_pos = []
@@ -64,6 +70,8 @@ def load_data(path_to_dir):
         for line in f:
             words = [w.lower() for w in line.strip().split() if len(w)>=3]
             test_neg.append(words)
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'load_data costs:', (b-a)
 
     return train_pos, train_neg, test_pos, test_neg
 
@@ -73,6 +81,8 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     """
     Returns the feature vectors for all text in the train and test datasets.
     """
+    a = datetime.datetime.now().replace(microsecond=0)
+
     # English stopwords from nltk
     stopwords = set(nltk.corpus.stopwords.words('english'))
     #print stopwords
@@ -84,8 +94,10 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     #   (3) Is in at least twice as many postive texts as negative texts, or vice-versa.
     
        #get all the words without duplicates
+    #print '97',datetime.datetime.now().replace(microsecond=0)
     train_words = set(list(itertools.chain(*train_neg))+list(itertools.chain(*train_pos)))
-    
+    #print '99',datetime.datetime.now().replace(microsecond=0)
+
         #eliminated the duplicate inside each text
     pos = []
     neg = []
@@ -95,41 +107,38 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     for text in train_neg:
         temp = set(text)
         neg.append(list(temp))
+    #print '110', datetime.datetime.now().replace(microsecond=0)
 
          #map the word into count
     temp_pos = list(itertools.chain(*pos))
     temp_neg= list(itertools.chain(*neg))
     pos_dic = collections.Counter(temp_pos)
     neg_dic = collections.Counter(temp_neg)
+    #print '117', datetime.datetime.now().replace(microsecond=0)
 
     dic1 = {x:y for x,y in pos_dic.iteritems() if y>=int(len(train_pos)*0.01) and x not in stopwords}
     dic2 = {x:y for x,y in neg_dic.iteritems() if y>=int(len(train_neg)*0.01) and x not in stopwords}
-
+    #print '121', datetime.datetime.now().replace(microsecond=0)
     condition12 = dic1.viewkeys() | dic2.viewkeys()
     intersection = pos_dic.viewkeys() & neg_dic.viewkeys()
-
+    #print '124', datetime.datetime.now().replace(microsecond=0)
     condition3 = []
     for key in intersection:
         if pos_dic[key]>=2*neg_dic[key] or neg_dic[key]>=2*pos_dic[key]:
             condition3.append(key)
+    #print '129', datetime.datetime.now().replace(microsecond=0)
     features = set(condition12) & set(condition3)
-
-    #print features
-    print len(features)
+    #print '131', datetime.datetime.now().replace(microsecond=0)
 
     # Using the above words as features, construct binary vectors for each text in the training and test set.
     # These should be python lists containing 0 and 1 integers.
-    # YOUR CODE HERE
     train_pos_vec = vec_map(features,train_pos)
     train_neg_vec = vec_map(features,train_neg)
+    #print '137', datetime.datetime.now().replace(microsecond=0)
     test_pos_vec = vec_map(features,test_pos)
     test_neg_vec = vec_map(features,test_neg)
-    print len(test_neg)
-    print len(test_neg_vec)
-
-
-
-
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'feature_vecs_NLP costs:', (b-a)
     # Return the four feature vectors
     return train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec
 
@@ -150,9 +159,10 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
     """
     Returns the feature vectors for all text in the train and test datasets.
     """
+    a = datetime.datetime.now().replace(microsecond=0)
+
     # Doc2Vec requires LabeledSentence objects as input.
     # Turn the datasets from lists of words to lists of LabeledSentence objects.
-    # YOUR CODE HERE
     labeled_train_pos = obj_map(train_pos,'TRAIN_POS_')
     labeled_train_neg = obj_map(train_neg,'TRAIN_NEG_')
     labeled_test_pos = obj_map(test_pos,'TEST_POS_')
@@ -170,17 +180,14 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
         print "Training iteration %d" % (i)
         random.shuffle(sentences)
         model.train(sentences)
+    
     # Use the docvecs function to extract the feature vectors for the training and test data
-    # YOUR CODE HERE
     train_pos_vec = vec_map_doc(train_pos,model,'TRAIN_POS_')
     train_neg_vec = vec_map_doc(train_neg,model,'TRAIN_NEG_')
     test_pos_vec = vec_map_doc(test_pos,model,'TEST_POS_')
     test_neg_vec = vec_map_doc(test_neg,model,'TEST_NEG_')
-
-
-
-
-    
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'feature_vecs_DOC costs:', (b-a)
     return train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec
 
 def obj_map(list,listname):
@@ -204,18 +211,19 @@ def build_models_NLP(train_pos_vec, train_neg_vec):
     """
     Returns a BernoulliNB and LosticRegression Model that are fit to the training data.
     """
-    X = train_pos_vec+train_neg_vec
-    Y = ["pos"]*len(train_pos_vec) + ["neg"]*len(train_neg_vec)
-    clf1 = sklearn.naive_bayes.BernoulliNB()
-    nb_model = clf1.fit(X,Y)
-    clf2 = sklearn.linear_model.LogisticRegression()
-    lr_model = clf2.fit(X,Y)
+    a = datetime.datetime.now().replace(microsecond=0)
 
     # Use sklearn's BernoulliNB and LogisticRegression functions to fit two models to the training data.
     # For BernoulliNB, use alpha=1.0 and binarize=None
     # For LogisticRegression, pass no parameters
-    # YOUR CODE HERE
-    
+    X = train_pos_vec+train_neg_vec
+    Y = ["pos"]*len(train_pos_vec) + ["neg"]*len(train_neg_vec)
+    clf1 = sklearn.naive_bayes.BernoulliNB(alpha=1.0,binarize=None)
+    nb_model = clf1.fit(X,Y)
+    clf2 = sklearn.linear_model.LogisticRegression()
+    lr_model = clf2.fit(X,Y)
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'build_models_NLP costs:', (b-a)  
     return nb_model, lr_model
 
 
@@ -223,16 +231,18 @@ def build_models_DOC(train_pos_vec, train_neg_vec):
     """
     Returns a GaussianNB and LosticRegression Model that are fit to the training data.
     """
+    a = datetime.datetime.now().replace(microsecond=0)
+
+    # Use sklearn's GaussianNB and LogisticRegression functions to fit two models to the training data.
+    # For LogisticRegression, pass no parameters
     X = train_pos_vec+train_neg_vec
     Y = ["pos"]*len(train_pos_vec) + ["neg"]*len(train_neg_vec)
     clf1 = sklearn.naive_bayes.GaussianNB()
     nb_model = clf1.fit(X,Y)
     clf2 = sklearn.linear_model.LogisticRegression()
     lr_model = clf2.fit(X,Y)
-
-    # Use sklearn's GaussianNB and LogisticRegression functions to fit two models to the training data.
-    # For LogisticRegression, pass no parameters
-    # YOUR CODE HERE
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'build_models_DOC costs:', (b-a)  
     
     return nb_model, lr_model
 
@@ -242,6 +252,8 @@ def evaluate_model(model, test_pos_vec, test_neg_vec, print_confusion=False):
     """
     Prints the confusion matrix and accuracy of the model.
     """
+    a = datetime.datetime.now().replace(microsecond=0)
+
     # Use the predict function and calculate the true/false positives and true/false negative.
     # YOUR CODE HERE
     pos_temp = model.predict(test_pos_vec)
@@ -261,6 +273,8 @@ def evaluate_model(model, test_pos_vec, test_neg_vec, print_confusion=False):
         print "pos\t\t%d\t%d" % (tp, fn)
         print "neg\t\t%d\t%d" % (fp, tn)
     print "accuracy: %f" % (accuracy)
+    b = datetime.datetime.now().replace(microsecond=0)
+    print 'evaluate_model costs:', (b-a)  
 
 
 
