@@ -153,6 +153,11 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
     # Doc2Vec requires LabeledSentence objects as input.
     # Turn the datasets from lists of words to lists of LabeledSentence objects.
     # YOUR CODE HERE
+    labeled_train_pos = obj_map(train_pos,'TRAIN_POS_')
+    labeled_train_neg = obj_map(train_neg,'TRAIN_NEG_')
+    labeled_test_pos = obj_map(test_pos,'TEST_POS_')
+    labeled_test_neg = obj_map(test_neg,'TEST_NEG_')
+
 
     # Initialize model
     model = Doc2Vec(min_count=1, window=10, size=100, sample=1e-4, negative=5, workers=4)
@@ -167,9 +172,31 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
         model.train(sentences)
     # Use the docvecs function to extract the feature vectors for the training and test data
     # YOUR CODE HERE
+    train_pos_vec = vec_map_doc(train_pos,model,'TRAIN_POS_')
+    train_neg_vec = vec_map_doc(train_neg,model,'TRAIN_NEG_')
+    test_pos_vec = vec_map_doc(test_pos,model,'TEST_POS_')
+    test_neg_vec = vec_map_doc(test_neg,model,'TEST_NEG_')
+
+
+
+
     
-    # Return the four feature vectors
     return train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec
+
+def obj_map(list,listname):
+    labeled = []
+    for i, text in enumerate(list):
+        obj =  LabeledSentence(words=text, tags=[listname+str(i)])
+        labeled.append(obj)
+    return labeled
+
+def vec_map_doc(list,model,listname):
+    feature_vec = []
+    for i in range(0,len(list)):
+        vector = model.docvecs[listname+str(i)]
+        feature_vec.append(vector)
+    return feature_vec
+
 
 
 
@@ -197,7 +224,7 @@ def build_models_DOC(train_pos_vec, train_neg_vec):
     Returns a GaussianNB and LosticRegression Model that are fit to the training data.
     """
     Y = ["pos"]*len(train_pos_vec) + ["neg"]*len(train_neg_vec)
-
+    
     # Use sklearn's GaussianNB and LogisticRegression functions to fit two models to the training data.
     # For LogisticRegression, pass no parameters
     # YOUR CODE HERE
