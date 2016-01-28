@@ -212,7 +212,17 @@ def evaluate_model(model, test_pos_vec, test_neg_vec, print_confusion=False):
     """
     # Use the predict function and calculate the true/false positives and true/false negative.
     # YOUR CODE HERE
-    
+    pos_temp = model.predict(test_pos_vec)
+    neg_temp = model.predict(test_neg_vec)
+    pos_predict = collections.Counter(pos_temp)
+    neg_predict = collections.Counter(neg_temp)
+    tp = pos_predict['pos']
+    tn = neg_predict['neg']
+    fn = pos_predict['neg']
+    fp = neg_predict['pos']
+    accuracy = (tp+tn)/float(tp+tn+fn+fp)
+    #print pos_predict
+    #print neg_predict
     if print_confusion:
         print "predicted:\tpos\tneg"
         print "actual:"
