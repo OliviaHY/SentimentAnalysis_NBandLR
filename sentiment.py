@@ -82,10 +82,11 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     #   (1) Contains no stop words
     #   (2) Is in at least 1% of the positive texts or 1% of the negative texts
     #   (3) Is in at least twice as many postive texts as negative texts, or vice-versa.
-    #get all the words without duplicates
+    
+       #get all the words without duplicates
     train_words = set(list(itertools.chain(*train_neg))+list(itertools.chain(*train_pos)))
     
-    #eliminated the duplicate inside each text
+        #eliminated the duplicate inside each text
     pos = []
     neg = []
     for text in train_pos:
@@ -95,19 +96,17 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
         temp = set(text)
         neg.append(list(temp))
 
-    #map the word into count
+         #map the word into count
     temp_pos = list(itertools.chain(*pos))
     temp_neg= list(itertools.chain(*neg))
     pos_dic = collections.Counter(temp_pos)
     neg_dic = collections.Counter(temp_neg)
-    #print pos_dic.most_common(10)
 
     dic1 = {x:y for x,y in pos_dic.iteritems() if y>=int(len(train_pos)*0.01) and x not in stopwords}
     dic2 = {x:y for x,y in neg_dic.iteritems() if y>=int(len(train_neg)*0.01) and x not in stopwords}
 
     condition12 = dic1.viewkeys() | dic2.viewkeys()
     intersection = pos_dic.viewkeys() & neg_dic.viewkeys()
-    #print len(intersection)
 
     condition3 = []
     for key in intersection:
@@ -115,16 +114,36 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
             condition3.append(key)
     features = set(condition12) & set(condition3)
 
-    print features
+    #print features
     print len(features)
 
     # Using the above words as features, construct binary vectors for each text in the training and test set.
     # These should be python lists containing 0 and 1 integers.
     # YOUR CODE HERE
+    train_pos_vec = vec_map(features,train_pos)
+    train_neg_vec = vec_map(features,train_neg)
+    test_pos_vec = vec_map(features,test_pos)
+    test_neg_vec = vec_map(features,test_neg)
+    print len(test_neg)
+    print len(test_neg_vec)
+
+
+
 
     # Return the four feature vectors
     return train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec
 
+def vec_map(features,textset):
+    vectors = []
+    for text in textset:
+        temp = []
+        for feature in features:
+            if feature in text:
+                temp.append(1)
+            else:
+                temp.append(0)
+        vectors.append(temp)
+    return vectors
 
 
 def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
@@ -146,7 +165,6 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
         print "Training iteration %d" % (i)
         random.shuffle(sentences)
         model.train(sentences)
-
     # Use the docvecs function to extract the feature vectors for the training and test data
     # YOUR CODE HERE
     
@@ -159,6 +177,7 @@ def build_models_NLP(train_pos_vec, train_neg_vec):
     """
     Returns a BernoulliNB and LosticRegression Model that are fit to the training data.
     """
+    #X = train_pos_vec+train_neg_vec
     Y = ["pos"]*len(train_pos_vec) + ["neg"]*len(train_neg_vec)
 
     # Use sklearn's BernoulliNB and LogisticRegression functions to fit two models to the training data.
@@ -167,7 +186,6 @@ def build_models_NLP(train_pos_vec, train_neg_vec):
     # YOUR CODE HERE
     
     return nb_model, lr_model
-
 
 
 def build_models_DOC(train_pos_vec, train_neg_vec):
